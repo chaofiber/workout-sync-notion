@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from garminconnect import Garmin
 from notion_client import Client
 from dotenv import load_dotenv
@@ -19,6 +19,7 @@ ACTIVITY_ICONS = {
     "Indoor Rowing": "https://img.icons8.com/?size=100&id=71098&format=png&color=000000",
     "Pilates": "https://img.icons8.com/?size=100&id=9774&format=png&color=000000",
     "Meditation": "https://img.icons8.com/?size=100&id=9798&format=png&color=000000",
+    "Road Biking": "https://img.icons8.com/?size=100&id=47443&format=png&color=000000",
     "Rowing": "https://img.icons8.com/?size=100&id=71491&format=png&color=000000",
     "Running": "https://img.icons8.com/?size=100&id=k1l1XFkME39t&format=png&color=000000",
     "Strength Training": "https://img.icons8.com/?size=100&id=107640&format=png&color=000000",
@@ -47,9 +48,12 @@ def format_activity_type(activity_type, activity_name=""):
         "Indoor Cardio": "Cardio",
         "Indoor Cycling": "Cycling",
         "Indoor Rowing": "Rowing",
+        "Road Biking": "Cycling",
         "Speed Walking": "Walking",
         "Strength Training": "Strength",
-        "Treadmill Running": "Running"
+        "Treadmill Running": "Running",
+        "Trail Running": "Running",
+        "Lap Swimming": "Swimming",
     }
 
     # Special replacement for Rowing V2
@@ -267,11 +271,18 @@ def main():
     client = Client(auth=notion_token)
     
     # Get all activities
-    activities = get_all_activities(garmin)
+    activities = get_all_activities(garmin) 
+    print(f'Total activities: {len(activities)}')
 
     # Process all activities
+    cutoff_date = datetime.now() - timedelta(days=14)
+    
     for activity in activities:
         activity_date = activity.get('startTimeGMT')
+        # Update activities in the past 2 weeks
+        activity_datetime = datetime.fromisoformat(activity_date.replace('Z', '+00:00'))
+        if activity_datetime < cutoff_date:
+            continue
         activity_name = format_entertainment(activity.get('activityName', 'Unnamed Activity'))
         activity_type, activity_subtype = format_activity_type(
             activity.get('activityType', {}).get('typeKey', 'Unknown'),
