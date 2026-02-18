@@ -237,7 +237,6 @@ def activity_needs_update(existing_activity, new_activity):
 
 def create_activity(client, database_id, activity):
     # Create a new activity in the Notion database
-    activity_date = activity.get("startTimeGMT")
     activity_name = format_entertainment(activity.get("activityName", "Unnamed Activity"))
     activity_type, activity_subtype = format_activity_type(
         activity.get("activityType", {}).get("typeKey", "Unknown"), activity_name
@@ -262,7 +261,9 @@ def create_activity(client, database_id, activity):
                 break
 
     properties = {
-        "Date": {"date": {"start": activity_date}},
+        "Date": {
+            "date": {"start": activity.get("startTimeGMT"), "end": activity.get("endTimeGMT")}
+        },
         "Activity Type": {"select": {"name": activity_type}},
         "Subactivity Type": {"select": {"name": activity_subtype}},
         "Activity Name": {"title": [{"text": {"content": activity_name}}]},
@@ -340,6 +341,12 @@ def update_activity(client, existing_activity, new_activity):
                 break
 
     properties = {
+        "Date": {
+            "date": {
+                "start": new_activity.get("startTimeGMT"),
+                "end": new_activity.get("endTimeGMT"),
+            }
+        },
         "Activity Type": {"select": {"name": activity_type}},
         "Subactivity Type": {"select": {"name": activity_subtype}},
         "Distance (km)": {"number": distance_km},
